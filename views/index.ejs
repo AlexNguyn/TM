@@ -1,0 +1,47 @@
+<%- include('partials/header') %>
+<%- include('partials/navbar') %>
+
+<div class="hero">
+  <div style="position:relative;z-index:2">
+    <p style="font-family:'Orbitron',sans-serif;font-size:0.8rem;letter-spacing:0.3em;color:var(--pink);text-shadow:var(--glow-pink);margin-bottom:1rem;text-transform:uppercase">⚡ Nền tảng quản lý nhóm</p>
+    <h1 class="hero-title">
+      <span class="neon-text-cyan">19A</span><span class="neon-text-pink">-Teamly</span>
+      <br/>
+      <span style="color:var(--text-bright);font-size:0.55em">Quản lý nhóm hiệu quả, hiện đại</span>
+    </h1>
+    <p class="hero-sub">
+      Tạo dự án, giao nhiệm vụ, theo dõi tiến độ, lập lộ trình và nhắn tin nhóm — tất cả trong một nền tảng với giao diện neon độc đáo.
+    </p>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
+      <a href="/auth/register" class="btn btn-cyan btn-lg">🚀 Bắt đầu miễn phí</a>
+      <a href="/auth/login" class="btn btn-ghost btn-lg">Đăng nhập →</a>
+    </div>
+
+    <!-- Feature pills -->
+    <div style="display:flex;gap:0.6rem;justify-content:center;flex-wrap:wrap;margin-top:3rem">
+      <% ['📋 Quản lý nhiệm vụ','📅 Lộ trình Gantt','💬 Chat nhóm','🔔 Thông báo thông minh','🏅 Chấm điểm thành viên','🔑 Mã mời dự án'].forEach(f => { %>
+        <span class="badge badge-cyan" style="font-size:0.75rem;padding:4px 12px"><%= f %></span>
+      <% }) %>
+    </div>
+  </div>
+</div>
+
+<!-- Features section -->
+<div class="container" style="padding-bottom:4rem">
+  <div class="grid-3" style="gap:1.5rem">
+    <% const features = [
+      {icon:'👑',title:'Phân cấp vai trò',desc:'Nhóm trưởng, phó nhóm, thành viên hoặc tùy chỉnh vai trò linh hoạt theo nhu cầu dự án.', color:'var(--cyan)'},
+      {icon:'📊',title:'Theo dõi tiến độ',desc:'Thanh tiến độ trực quan, lộ trình Gantt, deadline tự động — luôn biết nhóm đang ở đâu.', color:'var(--green)'},
+      {icon:'💬',title:'Chat theo dự án',desc:'Nhắn tin thời gian thực ngay trong dự án. Không cần app chat ngoài nữa.', color:'var(--pink)'}
+    ]; %>
+    <% features.forEach(f => { %>
+      <div class="card" style="border-color:rgba(0,245,255,0.15);text-align:center">
+        <div style="font-size:2.5rem;margin-bottom:0.8rem"><%= f.icon %></div>
+        <h3 style="color:<%= f.color %>;margin-bottom:0.5rem"><%= f.title %></h3>
+        <p style="color:var(--text-dim);font-size:0.9rem;line-height:1.7"><%= f.desc %></p>
+      </div>
+    <% }) %>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

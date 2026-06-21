@@ -1,0 +1,54 @@
+<%- include('../partials/header') %>
+
+<div class="auth-page">
+  <div style="position:fixed;width:400px;height:400px;background:radial-gradient(circle,rgba(150,0,255,0.06) 0%,transparent 70%);top:20%;right:30%;pointer-events:none;z-index:0"></div>
+
+  <div class="auth-card fade-in" style="max-width:500px">
+    <div class="auth-logo">
+      <span class="auth-logo-text">⚡ 19A-Teamly</span>
+      <p style="color:var(--text-dim);font-size:0.85rem;margin-top:0.3rem">Tạo tài khoản mới</p>
+    </div>
+
+    <% if (flash) { %>
+      <div class="flash flash-<%= flashType %>">
+        <%= flashType === 'success' ? '✅' : '⚠️' %> <%= flash %>
+      </div>
+    <% } %>
+
+    <form action="/auth/register" method="POST">
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Tên đăng nhập *</label>
+          <input type="text" name="username" class="form-control" placeholder="username" required/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tên hiển thị *</label>
+          <input type="text" name="display_name" class="form-control" placeholder="Tên của bạn" required/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email (tùy chọn)</label>
+        <input type="email" name="email" class="form-control" placeholder="email@example.com"/>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Mật khẩu *</label>
+          <input type="password" name="password" class="form-control" placeholder="Tối thiểu 6 ký tự" required/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Xác nhận mật khẩu *</label>
+          <input type="password" name="confirm_password" class="form-control" placeholder="Nhập lại mật khẩu" required/>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-cyan btn-block btn-lg" style="margin-top:0.5rem">
+        ✨ Tạo tài khoản
+      </button>
+    </form>
+
+    <div style="text-align:center;margin-top:1.5rem;color:var(--text-dim);font-size:0.9rem">
+      Đã có tài khoản? <a href="/auth/login">Đăng nhập</a>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

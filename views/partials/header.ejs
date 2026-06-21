@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="<%= locals.theme || 'dark' %>">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title><%= title %> | 19A-Teamly</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='28'>⚡</text></svg>"/>
+
+  <%# Preconnect để browser mở kết nối tới CDN trước, giảm latency %>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net"/>
+
+  <%# Load Google Fonts NON-BLOCKING: media=print trick — không block CSS parsing %>
+  <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap"
+        media="print" onload="this.media='all'"/>
+  <noscript>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap"/>
+  </noscript>
+
+  <%# CSS chính của app — không còn bị block bởi @import Google Fonts nữa %>
+  <link rel="stylesheet" href="/css/neon.css"/>
+
+  <%# Custom accent color cho Pro user %>
+  <% if (locals.currentUser && currentUser.isPro && currentUser.accentColor) { %>
+  <style>html:not([data-theme="light"]) { --cyan: <%= currentUser.accentColor %>; }</style>
+  <% } %>
+</head>
+<body>

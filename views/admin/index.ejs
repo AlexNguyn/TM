@@ -1,0 +1,190 @@
+<%- include('../partials/header') %>
+<%- include('../partials/navbar') %>
+<div class="container" style="padding-top:1.5rem;padding-bottom:4rem">
+  <div class="d-flex align-center justify-between mb-3">
+    <h1 class="page-title" style="color:var(--yellow)">⚙️ ADMIN PANEL</h1>
+  </div>
+  <% if (locals.flash) { %><div class="flash flash-<%= flashType %>"><%= flashType==='success'?'✅':'⚠️' %> <%= flash %></div><% } %>
+
+  <!-- Stats -->
+  <div class="stats-grid mb-3">
+    <div class="stat-card s-cyan"><div class="stat-number"><%= stats.users %></div><div class="stat-label">Người dùng</div></div>
+    <div class="stat-card s-pink"><div class="stat-number"><%= stats.projects %></div><div class="stat-label">Dự án</div></div>
+    <div class="stat-card s-green"><div class="stat-number"><%= stats.tasks %></div><div class="stat-label">Nhiệm vụ</div></div>
+    <div class="stat-card s-yellow"><div class="stat-number"><%= stats.members %></div><div class="stat-label">Thành viên nhóm</div></div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:start">
+    <!-- Users -->
+    <div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">👤 Người dùng</span>
+          <button class="btn btn-cyan btn-sm" data-modal-open="modalCreateUser">＋ Tạo TK</button>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="neon-table">
+            <thead><tr><th>Tên</th><th>Username</th><th>Vai trò</th><th>Gói</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+            <tbody>
+              <% users.forEach(u => { %>
+                <tr>
+                  <td style="color:var(--text-bright);font-weight:600"><%= u.display_name || u.username %></td>
+                  <td class="text-dim">@<%= u.username %></td>
+                  <td><span class="badge <%= u.role==='admin'?'badge-yellow':'badge-dim' %>"><%= u.role %></span></td>
+                  <td>
+                    <% if (u.role === 'admin') { %>
+                      <span class="badge-pro">⭐ PRO</span>
+                    <% } else if (u.plan === 'pro') { %>
+                      <span class="badge-pro">⭐ PRO</span>
+                    <% } else { %>
+                      <span class="badge-free">FREE</span>
+                    <% } %>
+                  </td>
+                  <td><span class="badge <%= u.is_active?'badge-green':'badge-red' %>"><%= u.is_active?'✅ Hoạt động':'🚫 Khóa' %></span></td>
+                  <td>
+                    <button type="button" class="btn btn-ghost btn-sm"
+                      onclick="openChangePwd('<%= u.id %>','<%= u.username %>')">🔑</button>
+                    <% if (u.role !== 'admin') { %>
+                      <form action="/admin/users/<%= u.id %>/toggle-plan" method="POST" style="display:inline">
+                        <button type="submit" class="btn btn-ghost btn-sm"><%= u.plan==='pro' ? '⬇️ Free' : '⭐ Pro' %></button>
+                      </form>
+                      <form action="/admin/users/<%= u.id %>/toggle" method="POST" style="display:inline">
+                        <button type="submit" class="btn btn-ghost btn-sm"><%= u.is_active?'🔒 Khóa':'🔓 Mở' %></button>
+                      </form>
+                      <form action="/admin/users/<%= u.id %>/delete" method="POST" style="display:inline">
+                        <button type="submit" class="btn btn-red btn-sm" data-confirm="Xóa user @<%= u.username %>?">🗑️</button>
+                      </form>
+                    <% } %>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Projects -->
+    <div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">📁 Dự án gần đây</span></div>
+        <div style="overflow-x:auto">
+          <table class="neon-table">
+            <thead><tr><th>Tên dự án</th><th>Owner</th><th>Thành viên</th><th>Thao tác</th></tr></thead>
+            <tbody>
+              <% projects.forEach(p => { %>
+                <tr>
+                  <td><a href="/projects/<%= p.id %>" style="color:var(--cyan)"><%= p.name %></a></td>
+                  <td class="text-dim"><%= p.owner_name || '-' %></td>
+                  <td><span class="badge badge-dim">👥 <%= p.member_count %></span></td>
+                  <td>
+                    <form action="/admin/projects/<%= p.id %>/delete" method="POST" style="display:inline">
+                      <button type="submit" class="btn btn-red btn-sm" data-confirm="Xóa dự án '<%= p.name %>'?">🗑️</button>
+                    </form>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Create User -->
+<div class="modal-overlay" id="modalCreateUser">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="neon-text-cyan" style="font-size:1rem">👤 Tạo tài khoản mới</h3>
+      <button class="modal-close" data-modal-close="modalCreateUser">✕</button>
+    </div>
+    <form action="/admin/users/create" method="POST">
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Username *</label>
+          <input type="text" name="username" class="form-control" required/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tên hiển thị *</label>
+          <input type="text" name="display_name" class="form-control" required/>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Mật khẩu *</label>
+          <input type="password" name="password" class="form-control" required/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Vai trò</label>
+          <select name="role" class="form-control">
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+      </div>
+      <p style="font-size:0.8rem;color:var(--text-dim);margin-bottom:0.8rem">
+        💡 Tài khoản mới đăng ký mặc định gói <strong>FREE</strong>. Admin có thể cấp Pro ở cột "Gói" bên trên.
+      </p>
+      <div style="display:flex;gap:0.5rem;justify-content:flex-end">
+        <button type="button" class="btn btn-ghost" data-modal-close="modalCreateUser">Hủy</button>
+        <button type="submit" class="btn btn-cyan">＋ Tạo</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Đổi mật khẩu tài khoản (Admin) -->
+<div class="modal-overlay" id="modalChangePwd">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="neon-text-cyan" style="font-size:1rem">🔑 Đổi mật khẩu — <span id="pwdModalUsername"></span></h3>
+      <button class="modal-close" onclick="document.getElementById('modalChangePwd').classList.remove('open')">✕</button>
+    </div>
+    <form id="changePwdForm" method="POST">
+      <div class="form-group">
+        <label class="form-label">Mật khẩu mới *</label>
+        <div style="position:relative">
+          <input type="password" name="new_password" id="adminNewPass" class="form-control" required minlength="6" placeholder="Tối thiểu 6 ký tự" style="padding-right:2.8rem"/>
+          <button type="button" onclick="toggleAdminPwd('adminNewPass',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:1.1rem">👁</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Xác nhận mật khẩu mới *</label>
+        <div style="position:relative">
+          <input type="password" name="confirm_new_password" id="adminCfmPass" class="form-control" required placeholder="Nhập lại mật khẩu" style="padding-right:2.8rem"/>
+          <button type="button" onclick="toggleAdminPwd('adminCfmPass',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:1.1rem">👁</button>
+        </div>
+        <div id="adminMatchMsg" style="margin-top:4px;font-size:0.78rem"></div>
+      </div>
+      <div style="display:flex;gap:0.5rem;justify-content:flex-end">
+        <button type="button" class="btn btn-ghost" onclick="document.getElementById('modalChangePwd').classList.remove('open')">Hủy</button>
+        <button type="submit" class="btn btn-cyan">🔐 Lưu mật khẩu</button>
+      </div>
+    </form>
+  </div>
+</div>
+<script>
+function openChangePwd(uid, uname) {
+  document.getElementById('pwdModalUsername').textContent = '@' + uname;
+  document.getElementById('changePwdForm').action = '/admin/users/' + uid + '/change-password';
+  document.getElementById('adminNewPass').value = '';
+  document.getElementById('adminCfmPass').value = '';
+  document.getElementById('adminMatchMsg').textContent = '';
+  document.getElementById('modalChangePwd').classList.add('open');
+}
+function toggleAdminPwd(id, btn) {
+  const el = document.getElementById(id);
+  el.type = el.type === 'password' ? 'text' : 'password';
+  btn.textContent = el.type === 'password' ? '👁' : '🙈';
+}
+document.getElementById('adminCfmPass').addEventListener('input', function() {
+  const msg = document.getElementById('adminMatchMsg');
+  const newp = document.getElementById('adminNewPass').value;
+  if (!this.value) { msg.textContent = ''; return; }
+  if (this.value === newp) { msg.textContent = '✅ Khớp'; msg.style.color = 'var(--green)'; }
+  else { msg.textContent = '❌ Chưa khớp'; msg.style.color = 'var(--red)'; }
+});
+</script>
+
+<%- include('../partials/footer') %>

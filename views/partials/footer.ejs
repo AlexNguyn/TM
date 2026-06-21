@@ -1,0 +1,7 @@
+  <%# Chart.js — KHÔNG defer vì detail.ejs có inline script dùng window.Chart %>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <%# Socket.io + main.js — defer an toàn vì chỉ dùng qua event handlers %>
+  <script src="/socket.io/socket.io.js" defer></script>
+  <script src="/js/main.js" defer></script>
+</body>
+</html>

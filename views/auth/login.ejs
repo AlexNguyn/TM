@@ -1,0 +1,40 @@
+<%- include('../partials/header') %>
+
+<div class="auth-page">
+  <!-- Ambient glow circles -->
+  <div style="position:fixed;width:400px;height:400px;background:radial-gradient(circle,rgba(0,245,255,0.06) 0%,transparent 70%);top:20%;left:30%;pointer-events:none;z-index:0"></div>
+  <div style="position:fixed;width:300px;height:300px;background:radial-gradient(circle,rgba(255,0,204,0.05) 0%,transparent 70%);bottom:20%;right:25%;pointer-events:none;z-index:0"></div>
+
+  <div class="auth-card fade-in">
+    <div class="auth-logo">
+      <span class="auth-logo-text">⚡ 19A-Teamly</span>
+      <p style="color:var(--text-dim);font-size:0.85rem;margin-top:0.3rem">Đăng nhập để tiếp tục</p>
+    </div>
+
+    <% if (flash) { %>
+      <div class="flash flash-<%= flashType %>">
+        <%= flashType === 'success' ? '✅' : '⚠️' %> <%= flash %>
+      </div>
+    <% } %>
+
+    <form action="/auth/login" method="POST">
+      <div class="form-group">
+        <label class="form-label">Tên đăng nhập</label>
+        <input type="text" name="username" class="form-control" placeholder="Nhập username..." required autocomplete="username"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mật khẩu</label>
+        <input type="password" name="password" class="form-control" placeholder="••••••••" required autocomplete="current-password"/>
+      </div>
+      <button type="submit" class="btn btn-cyan btn-block btn-lg" style="margin-top:0.5rem">
+        🚀 Đăng nhập
+      </button>
+    </form>
+
+    <div style="text-align:center;margin-top:1.5rem;color:var(--text-dim);font-size:0.9rem">
+      Chưa có tài khoản? <a href="/auth/register">Đăng ký ngay</a>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

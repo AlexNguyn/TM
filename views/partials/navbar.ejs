@@ -1,0 +1,109 @@
+<% const u = locals.currentUser; %>
+<nav class="navbar">
+  <a href="<%= u ? '/dashboard' : '/' %>" class="navbar-brand">
+    <div class="logo-icon">⚡</div>
+    <span style="color:var(--cyan);text-shadow:var(--glow-cyan)">19A-Teamly</span>
+  </a>
+
+  <ul class="navbar-nav">
+    <% if (u) { %>
+      <li><a href="/dashboard" class="<%= locals.title==='Dashboard'?'active':'' %>">🏠 Dashboard</a></li>
+      <li><a href="/projects/new">＋ Tạo dự án</a></li>
+      <li><a href="/projects/join">🔗 Tham gia</a></li>
+      <% if (u.role === 'admin') { %>
+        <li><a href="/admin" style="color:var(--yellow)">⚙️ Admin</a></li>
+      <% } %>
+
+      <!-- Plan badge -->
+      <li>
+        <a href="/pricing" style="text-decoration:none">
+          <% if (u.isPro) { %>
+            <span class="badge-pro">⭐ PRO</span>
+          <% } else { %>
+            <span class="badge-free">FREE</span>
+          <% } %>
+        </a>
+      </li>
+
+      <!-- Notification bell -->
+      <li class="relative">
+        <button id="notifBell" class="btn btn-ghost" style="position:relative;padding:0.4rem 0.8rem">
+          🔔
+          <% if (locals.unreadCount > 0) { %>
+            <span class="notif-badge"><%= locals.unreadCount %></span>
+          <% } else if (locals.notifCount > 0) { %>
+            <span class="notif-badge"><%= locals.notifCount %></span>
+          <% } %>
+        </button>
+        <div class="notif-panel" id="notifPanel">
+          <div style="padding:0.8rem 1rem;border-bottom:1px solid rgba(0,245,255,0.15);display:flex;align-items:center;justify-content:space-between">
+            <span style="font-family:'Orbitron',sans-serif;font-size:0.8rem;color:var(--cyan)">THÔNG BÁO</span>
+            <form action="/notifications/read-all" method="POST" style="display:inline">
+              <button type="submit" class="btn btn-ghost btn-sm">Đọc hết</button>
+            </form>
+          </div>
+          <div style="max-height:320px;overflow-y:auto">
+            <% if (locals.notifications && locals.notifications.length > 0) { %>
+              <% locals.notifications.slice(0,10).forEach(n => { %>
+                <div class="notif-item <%= n.is_read ? '' : 'unread' %>" data-id="<%= n.id %>">
+                  <div class="notif-content">
+                    <div class="notif-title"><%= n.title || '📢 Thông báo' %></div>
+                    <div class="notif-msg"><%= n.message %></div>
+                    <% if (n.project_name) { %><div class="notif-time">📁 <%= n.project_name %></div><% } %>
+                    <div class="notif-time"><%= new Date(n.created_at).toLocaleString('vi-VN') %></div>
+                  </div>
+                </div>
+              <% }) %>
+            <% } else { %>
+              <div style="padding:2rem;text-align:center;color:var(--text-dim);font-size:0.85rem">Không có thông báo</div>
+            <% } %>
+          </div>
+        </div>
+      </li>
+
+      <!-- Avatar + name -->
+      <li>
+        <a href="/profile" class="avatar-pill" style="text-decoration:none">
+          <div class="avatar" style="background:<%= u.avatarColor || '#00f5ff' %>"><%= (u.displayName||u.username)[0].toUpperCase() %></div>
+          <span style="font-size:0.85rem;font-weight:600;color:var(--text-bright)"><%= u.displayName || u.username %></span>
+        </a>
+      </li>
+
+      <li>
+        <form action="/auth/logout" method="POST" style="display:inline">
+          <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--red)">↩ Đăng xuất</button>
+        </form>
+      </li>
+    <% } else { %>
+      <li><a href="/pricing">💎 Bảng giá</a></li>
+      <li><a href="/auth/login">Đăng nhập</a></li>
+      <li><a href="/auth/register" class="btn btn-cyan btn-sm">Đăng ký</a></li>
+    <% } %>
+
+    <!-- Theme toggle (always visible) -->
+    <li>
+      <button id="themeToggle" type="button" class="theme-toggle" title="Đổi giao diện sáng/tối">
+        <span id="themeIcon"><%= (locals.theme === 'light') ? '🌙' : '☀️' %></span>
+      </button>
+    </li>
+  </ul>
+</nav>
+
+<script>
+(function() {
+  var btn = document.getElementById('themeToggle');
+  var icon = document.getElementById('themeIcon');
+  if (!btn) return;
+  btn.addEventListener('click', function() {
+    var current = document.documentElement.getAttribute('data-theme') || 'dark';
+    var next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    icon.textContent = next === 'light' ? '🌙' : '☀️';
+    fetch('/profile/theme', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ theme: next })
+    }).catch(function(){});
+  });
+})();
+</script>

@@ -1,0 +1,75 @@
+<%- include('partials/header') %>
+<%- include('partials/navbar') %>
+
+<div class="container" style="padding-top:2rem;padding-bottom:4rem">
+  <div class="page-header" style="text-align:center">
+    <h1 class="page-title">💎 Bảng giá</h1>
+    <p class="text-dim">Chọn gói phù hợp với nhóm của bạn</p>
+  </div>
+
+  <% if (flash) { %><div class="flash flash-<%= flashType %>" style="max-width:900px;margin:0 auto 1.5rem"><%= flashType==='success'?'✅':'⚠️' %> <%= flash %></div><% } %>
+
+  <div class="pricing-grid">
+    <!-- FREE -->
+    <div class="pricing-card">
+      <div style="font-family:'Orbitron',sans-serif;letter-spacing:0.1em;color:var(--text-dim);font-size:0.85rem">FREE</div>
+      <div class="pricing-price" style="color:var(--cyan)">0₫</div>
+      <ul class="pricing-list">
+        <li>✅ Tạo & tham gia dự án bằng mã mời</li>
+        <li>✅ Phân quyền Admin / Leader / Deputy / Member</li>
+        <li>✅ Quản lý nhiệm vụ, hạn chót, độ ưu tiên</li>
+        <li>✅ Nộp bài qua link Google Drive</li>
+        <li>✅ Chấm điểm thành viên</li>
+        <li>✅ Chat nhóm real-time</li>
+        <li>✅ Lộ trình / mốc dự án (Gantt cơ bản)</li>
+        <li>✅ Thông báo hạn chót</li>
+        <li class="dim">🔒 Kanban board kéo thả</li>
+        <li class="dim">🔒 Thống kê đóng góp (radar chart)</li>
+        <li class="dim">🔒 Xuất báo cáo PDF/Excel</li>
+        <li class="dim">🔒 Mẫu dự án có sẵn</li>
+        <li class="dim">🔒 Tùy biến màu chủ đề</li>
+      </ul>
+      <% if (!locals.currentUser) { %>
+        <a href="/auth/register" class="btn btn-ghost btn-block">Bắt đầu miễn phí</a>
+      <% } else if (!currentUser.isPro) { %>
+        <button class="btn btn-ghost btn-block" disabled>✅ Gói hiện tại của bạn</button>
+      <% } else { %>
+        <button class="btn btn-ghost btn-block" disabled>Bạn đang dùng Pro</button>
+      <% } %>
+    </div>
+
+    <!-- PRO -->
+    <div class="pricing-card featured">
+      <div style="font-family:'Orbitron',sans-serif;letter-spacing:0.1em;color:var(--yellow);font-size:0.85rem">⭐ PRO</div>
+      <div class="pricing-price" style="color:var(--yellow)">Theo yêu cầu</div>
+      <p style="font-size:0.8rem;color:var(--text-dim);margin-top:-0.8rem;margin-bottom:1.2rem">Liên hệ Admin để được cấp quyền Pro</p>
+      <ul class="pricing-list">
+        <li>✅ Toàn bộ tính năng Free</li>
+        <li>🗂️ <strong>Kanban board</strong> — kéo thả nhiệm vụ giữa Cần làm / Đang làm / Hoàn thành</li>
+        <li>📈 <strong>Thống kê đóng góp</strong> — biểu đồ radar so sánh năng suất thành viên</li>
+        <li>📄 <strong>Xuất báo cáo PDF & Excel</strong> tổng kết dự án</li>
+        <li>🧩 <strong>Mẫu dự án có sẵn</strong>: Đồ án CNTT, Báo cáo thực tập, Khóa luận tốt nghiệp</li>
+        <li>🎨 <strong>Tùy biến màu chủ đề</strong> riêng cho tài khoản</li>
+        <li>♾️ Không giới hạn số dự án / thành viên</li>
+      </ul>
+      <% if (!locals.currentUser) { %>
+        <a href="/auth/register" class="btn btn-cyan btn-block">Đăng ký tài khoản</a>
+      <% } else if (currentUser.isPro) { %>
+        <button class="btn btn-cyan btn-block" disabled>⭐ Bạn đang dùng Pro</button>
+      <% } else { %>
+        <div style="text-align:center;padding:0.8rem;background:rgba(0,245,255,0.04);border:1px dashed var(--card-border);border-radius:var(--radius)">
+          <p style="font-size:0.82rem;color:var(--text-dim);margin-bottom:0.5rem">Để nâng cấp lên Pro, vui lòng liên hệ Admin của hệ thống.</p>
+          <span style="font-size:0.78rem;color:var(--text-dim)">Admin có thể cấp quyền Pro tại <strong style="color:var(--cyan)">Admin Panel → Người dùng</strong></span>
+        </div>
+      <% } %>
+    </div>
+  </div>
+
+  <% if (locals.currentUser && !currentUser.isPro) { %>
+    <p style="text-align:center;color:var(--text-dim);font-size:0.8rem;margin-top:1.5rem">
+      💡 Quyền Pro được cấp thủ công bởi Admin. Chỉ tài khoản Admin mới có thể thay đổi gói của các người dùng khác.
+    </p>
+  <% } %>
+</div>
+
+<%- include('partials/footer') %>
