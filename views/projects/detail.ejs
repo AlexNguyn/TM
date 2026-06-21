@@ -164,7 +164,7 @@
       <% } else { %>
         <% tasks.forEach(t => {
           const isOverdue = t.deadline && new Date(t.deadline) < new Date() && t.status !== 'approved';
-          const isMyTask = currentUser && (t.assigned_to === null || t.assigned_to === currentUser.id);
+          const isMyTask = currentUser && (!t.assigned_to || t.assigned_to.length === 0 || (Array.isArray(t.assigned_to) && t.assigned_to.includes(currentUser.id)));
           const mySubStatus = t.my_submission_status;
           const filterTag = isOverdue ? 'overdue' : t.status;
         %>
@@ -220,6 +220,9 @@
               <% } %>
               <% if (t.status === 'approved' && canReviewSubmissionsUI) { %>
                 <button class="btn btn-ghost btn-sm" onclick="openReviewModal(<%= t.id %>,'<%= escHtml(t.title) %>', false)">📎 Bài đã nộp</button>
+                <form action="/projects/<%= project.id %>/tasks/<%= t.id %>/undo-approve" method="POST" style="display:inline">
+                  <button type="submit" class="btn btn-yellow btn-sm" data-confirm="Bạn có chắc muốn hủy duyệt nhiệm vụ này? Trạng thái sẽ quay lại 'Đã nộp'.">Hủy duyệt</button>
+                </form>
               <% } %>
               <% if (canEditTasksUI) { %>
                 <form action="/projects/<%= project.id %>/tasks/<%= t.id %>/delete" method="POST" style="display:inline">
@@ -700,12 +703,13 @@
       <div class="grid-2">
         <div class="form-group">
           <label class="form-label">Giao cho</label>
-          <select name="assigned_to" class="form-control">
-            <option value="">-- Tất cả --</option>
+          <div class="form-control" style="height:auto; max-height:150px; overflow-y:auto; padding:0.5rem; background:rgba(0,0,0,0.2)">
             <% (locals.activeMembers||[]).forEach(m => { %>
-              <option value="<%= m.user_id %>"><%= m.display_name %></option>
+              <label style="display:block; margin-bottom:4px; cursor:pointer">
+                <input type="checkbox" name="assigned_to" value="<%= m.user_id %>"> <%= m.display_name %>
+              </label>
             <% }) %>
-          </select>
+          </div>
         </div>
         <div class="form-group">
           <label class="form-label">Ưu tiên</label>
@@ -820,12 +824,13 @@
         </div>
         <div class="form-group">
           <label class="form-label">Giao cho</label>
-          <select name="assigned_to" class="form-control">
-            <option value="">-- Không giao --</option>
+          <div class="form-control" style="height:auto; max-height:150px; overflow-y:auto; padding:0.5rem; background:rgba(0,0,0,0.2)">
             <% (locals.activeMembers||[]).forEach(m => { %>
-              <option value="<%= m.user_id %>"><%= m.display_name %></option>
+              <label style="display:block; margin-bottom:4px; cursor:pointer">
+                <input type="checkbox" name="assigned_to" value="<%= m.user_id %>"> <%= m.display_name %>
+              </label>
             <% }) %>
-          </select>
+          </div>
         </div>
       </div>
       <div style="display:flex;gap:0.5rem;justify-content:flex-end;margin-top:1rem">

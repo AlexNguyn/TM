@@ -18,7 +18,7 @@ router.get("/submissions/:taskId", async (req, res) => {
     let canView =
       req.session.role === "admin" ||
       task.owner_id === req.session.userId ||
-      task.assigned_to === req.session.userId;
+      (task.assigned_to || []).includes(req.session.userId);
     if (!canView) {
       const memberR = await pool.query(
         "SELECT role, status, can_view_peer_submissions, can_approve_submissions FROM project_members WHERE project_id=$1 AND user_id=$2",

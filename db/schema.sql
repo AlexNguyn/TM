@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS tasks (
   project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
   title VARCHAR(200) NOT NULL,
   description TEXT,
-  assigned_to INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  assigned_to INTEGER[],
   deadline TIMESTAMP,
   status VARCHAR(20) DEFAULT 'todo', -- 'todo', 'in_progress', 'submitted', 'approved', 'rejected'
   priority VARCHAR(20) DEFAULT 'medium', -- 'low', 'medium', 'high', 'urgent'
@@ -133,7 +133,7 @@ CREATE TABLE IF NOT EXISTS roadmap_items (
   end_date DATE NOT NULL,
   status VARCHAR(20) DEFAULT 'pending', -- 'pending', 'in_progress', 'done'
   color VARCHAR(20) DEFAULT '#00f5ff',
-  assigned_to INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  assigned_to INTEGER[],
   created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -160,3 +160,19 @@ VALUES (
   '#ff00cc'
 )
 ON CONFLICT (username) DO UPDATE SET password = EXCLUDED.password;
+
+-- ============================================================
+-- MIGRATION: Convert assigned_to from INTEGER to INTEGER[]
+-- ============================================================
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'tasks' AND column_name = 'assigned_to' AND data_type = 'integer') THEN
+    ALTER TABLE tasks DROP CONSTRAINT IF EXISTS tasks_assigned_to_fkey;
+    ALTER TABLE tasks ALTER COLUMN assigned_to TYPE INTEGER[] USING CASE WHEN assigned_to IS NULL THEN NULL ELSE ARRAY[assigned_to]::INTEGER[] END;
+  END IF;
+  
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'roadmap_items' AND column_name = 'assigned_to' AND data_type = 'integer') THEN
+    ALTER TABLE roadmap_items DROP CONSTRAINT IF EXISTS roadmap_items_assigned_to_fkey;
+    ALTER TABLE roadmap_items ALTER COLUMN assigned_to TYPE INTEGER[] USING CASE WHEN assigned_to IS NULL THEN NULL ELSE ARRAY[assigned_to]::INTEGER[] END;
+  END IF;
+END $$;

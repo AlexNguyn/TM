@@ -337,10 +337,12 @@ router.get("/:id", async (req, res) => {
 
     if (tab === "overview" || tab === "tasks" || tab === "kanban") {
       const tasks = await pool.query(
-        `SELECT t.*, u.display_name AS assignee_name, 
+        `SELECT t.*, string_agg(u.display_name, ', ') AS assignee_name, 
          (SELECT COUNT(*) FROM task_submissions ts WHERE ts.task_id = t.id AND ts.status='approved') AS approved_count
-         FROM tasks t LEFT JOIN users u ON u.id = t.assigned_to
-         WHERE t.project_id = $1 ORDER BY t.deadline ASC NULLS LAST, t.created_at DESC`,
+         FROM tasks t LEFT JOIN users u ON u.id = ANY(t.assigned_to)
+         WHERE t.project_id = $1 
+         GROUP BY t.id
+         ORDER BY t.deadline ASC NULLS LAST, t.created_at DESC`,
         [projectId],
       );
       tabData.tasks = tasks.rows;
@@ -356,9 +358,9 @@ router.get("/:id", async (req, res) => {
          COUNT(t.id) FILTER (WHERE t.status IN ('in_progress','submitted')) AS inprogress_tasks
          FROM project_members pm
          JOIN users u ON u.id = pm.user_id
-         LEFT JOIN tasks t ON t.assigned_to = pm.user_id AND t.project_id = pm.project_id
+         LEFT JOIN tasks t ON pm.user_id = ANY(t.assigned_to) AND t.project_id = pm.project_id
          WHERE pm.project_id = $1
-         GROUP BY pm.project_id, pm.user_id, pm.role, pm.custom_role_name, pm.status, pm.score,
+         GROUP BY pm.id, pm.project_id, pm.user_id, pm.role, pm.custom_role_name, pm.status, pm.score, pm.joined_at,
            pm.can_view_peer_submissions, pm.can_comment_submissions, pm.can_approve_submissions, pm.can_edit_tasks,
            u.display_name, u.username, u.avatar_color, u.email
          ORDER BY CASE pm.role WHEN 'leader' THEN 0 WHEN 'vice_leader' THEN 1 WHEN 'member' THEN 2 ELSE 3 END,
@@ -377,9 +379,9 @@ router.get("/:id", async (req, res) => {
 
     if (tab === "roadmap") {
       const roadmap = await pool.query(
-        `SELECT ri.*, u.display_name AS assignee_name FROM roadmap_items ri
-         LEFT JOIN users u ON u.id = ri.assigned_to
-         WHERE ri.project_id=$1 ORDER BY ri.start_date ASC`,
+        `SELECT ri.*, string_agg(u.display_name, ', ') AS assignee_name FROM roadmap_items ri
+         LEFT JOIN users u ON u.id = ANY(ri.assigned_to)
+         WHERE ri.project_id=$1 GROUP BY ri.id ORDER BY ri.start_date ASC`,
         [projectId],
       );
       tabData.roadmapItems = roadmap.rows;
@@ -409,7 +411,7 @@ router.get("/:id", async (req, res) => {
            (SELECT COUNT(*) FROM activity_log al WHERE al.project_id=$1 AND al.user_id=u.id) AS activity_count
          FROM project_members pm
          JOIN users u ON u.id = pm.user_id
-         LEFT JOIN tasks t ON t.project_id = pm.project_id AND t.assigned_to = u.id
+         LEFT JOIN tasks t ON t.project_id = pm.project_id AND u.id = ANY(t.assigned_to)
          WHERE pm.project_id=$1 AND pm.status='active'
          GROUP BY u.id, u.display_name, u.avatar_color, pm.score
          ORDER BY pm.score DESC`,
@@ -496,7 +498,7 @@ router.get("/:id", async (req, res) => {
          (SELECT ts.status FROM task_submissions ts WHERE ts.task_id=t.id AND ts.user_id=$1 ORDER BY ts.submitted_at DESC LIMIT 1) AS my_submission_status,
          (SELECT ts.drive_link FROM task_submissions ts WHERE ts.task_id=t.id AND ts.user_id=$1 ORDER BY ts.submitted_at DESC LIMIT 1) AS my_drive_link,
          (SELECT ts.id FROM task_submissions ts WHERE ts.task_id=t.id AND ts.user_id=$1 ORDER BY ts.submitted_at DESC LIMIT 1) AS my_submission_id
-         FROM tasks t WHERE t.project_id=$2 AND (t.assigned_to=$1 OR t.assigned_to IS NULL)
+         FROM tasks t WHERE t.project_id=$2 AND ($1 = ANY(t.assigned_to) OR t.assigned_to IS NULL OR cardinality(t.assigned_to) = 0)
          AND t.status != 'approved' ORDER BY t.deadline ASC NULLS LAST`,
         [userId, projectId],
       );
@@ -551,6 +553,15 @@ router.post("/:id/tasks/create", async (req, res) => {
   const projectId = parseInt(req.params.id);
   const { title, description, assigned_to, deadline, priority } = req.body;
   const userId = req.session.userId;
+  let assignees = [];
+  if (Array.isArray(assigned_to)) {
+    assignees = assigned_to.map(x => parseInt(x)).filter(x => !isNaN(x));
+  } else if (assigned_to) {
+    const p = parseInt(assigned_to);
+    if (!isNaN(p)) assignees.push(p);
+  }
+  const assignedToArray = assignees.length > 0 ? assignees : null;
+
   try {
     const memberInfo = await getMemberRole(projectId, userId);
     const proj = await pool.query("SELECT * FROM projects WHERE id=$1", [
@@ -569,21 +580,23 @@ router.post("/:id/tasks/create", async (req, res) => {
         projectId,
         title.trim(),
         description,
-        assigned_to || null,
+        assignedToArray,
         deadline || null,
         priority || "medium",
         userId,
       ],
     );
     // Notify assignee
-    if (assigned_to) {
-      await notify(
-        parseInt(assigned_to),
-        projectId,
-        "task_assigned",
-        "📋 Nhiệm vụ mới",
-        `Bạn được giao nhiệm vụ: "${title}"${deadline ? ` (Hạn: ${new Date(deadline).toLocaleDateString("vi-VN")})` : ""}`,
-      );
+    if (assignees.length > 0) {
+      for (const uid of assignees) {
+        await notify(
+          uid,
+          projectId,
+          "task_assigned",
+          "📋 Nhiệm vụ mới",
+          `Bạn được giao nhiệm vụ: "${title}"${deadline ? ` (Hạn: ${new Date(deadline).toLocaleDateString("vi-VN")})` : ""}`,
+        );
+      }
     }
     await logActivity(
       projectId,
@@ -718,6 +731,41 @@ router.post("/:id/tasks/:tid/review", async (req, res) => {
   }
 });
 
+// POST /projects/:id/tasks/:tid/undo-approve
+router.post("/:id/tasks/:tid/undo-approve", async (req, res) => {
+  const projectId = parseInt(req.params.id);
+  const taskId = parseInt(req.params.tid);
+  const userId = req.session.userId;
+  try {
+    const memberInfo = await getMemberRole(projectId, userId);
+    const proj = await pool.query("SELECT * FROM projects WHERE id=$1", [projectId]);
+    if (!canReviewProjectSubmissions(memberInfo, proj.rows[0], userId, req.session.role)) {
+      return res.redirect(`/projects/${projectId}?tab=tasks&flash=Không+có+quyền&type=error`);
+    }
+
+    const taskR = await pool.query("SELECT title FROM tasks WHERE id=$1", [taskId]);
+    if (taskR.rows.length === 0) return res.redirect(`/projects/${projectId}?tab=tasks`);
+
+    await pool.query(
+      "UPDATE task_submissions SET status='submitted', leader_note=NULL WHERE task_id=$1 AND status='approved'",
+      [taskId]
+    );
+    await pool.query("UPDATE tasks SET status='submitted' WHERE id=$1", [taskId]);
+
+    await logActivity(
+      projectId,
+      userId,
+      "undo_approve",
+      `Hủy duyệt: "${taskR.rows[0].title}"`
+    );
+
+    res.redirect(`/projects/${projectId}?tab=tasks&flash=Đã+hủy+duyệt&type=success`);
+  } catch (err) {
+    console.error(err);
+    res.redirect(`/projects/${projectId}?tab=tasks&flash=Lỗi&type=error`);
+  }
+});
+
 // POST /projects/:id/tasks/:tid/delete
 router.post("/:id/tasks/:tid/delete", async (req, res) => {
   const projectId = parseInt(req.params.id);
@@ -826,9 +874,11 @@ async function buildReportData(projectId) {
   );
 
   const tasks = await pool.query(
-    `SELECT t.title, t.status, t.priority, t.deadline, u.display_name AS assignee_name
-     FROM tasks t LEFT JOIN users u ON u.id=t.assigned_to
-     WHERE t.project_id=$1 ORDER BY t.deadline ASC NULLS LAST, t.created_at ASC`,
+    `SELECT t.title, t.status, t.priority, t.deadline, string_agg(u.display_name, ', ') AS assignee_name
+     FROM tasks t LEFT JOIN users u ON u.id=ANY(t.assigned_to)
+     WHERE t.project_id=$1 
+     GROUP BY t.id
+     ORDER BY t.deadline ASC NULLS LAST, t.created_at ASC`,
     [projectId],
   );
 
@@ -1207,6 +1257,15 @@ router.post("/:id/roadmap/create", async (req, res) => {
   const projectId = parseInt(req.params.id);
   const { title, description, start_date, end_date, color, assigned_to } =
     req.body;
+  let assignees = [];
+  if (Array.isArray(assigned_to)) {
+    assignees = assigned_to.map(x => parseInt(x)).filter(x => !isNaN(x));
+  } else if (assigned_to) {
+    const p = parseInt(assigned_to);
+    if (!isNaN(p)) assignees.push(p);
+  }
+  const assignedToArray = assignees.length > 0 ? assignees : null;
+
   try {
     await pool.query(
       "INSERT INTO roadmap_items (project_id, title, description, start_date, end_date, color, assigned_to) VALUES ($1,$2,$3,$4,$5,$6,$7)",
@@ -1217,7 +1276,7 @@ router.post("/:id/roadmap/create", async (req, res) => {
         start_date,
         end_date,
         color || "#00f5ff",
-        assigned_to || null,
+        assignedToArray,
       ],
     );
     await logActivity(

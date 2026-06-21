@@ -1903,3 +1903,99 @@ select.form-control option {
 [data-theme="light"] .card-title {
   text-shadow: none;
 }
+
+/* ─── Mobile Responsiveness ─────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Layout adjustments */
+  .container {
+    padding: 0 1rem;
+  }
+  .page-header {
+    padding: 1.2rem 0 1rem;
+    margin-bottom: 1.2rem;
+  }
+  .page-title {
+    font-size: 1.4rem;
+  }
+  .card {
+    padding: 1rem;
+  }
+  
+  /* Navbar */
+  .navbar {
+    padding: 0.5rem 1rem;
+    height: auto;
+    min-height: 60px;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .navbar-nav {
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+    justify-content: flex-start;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .navbar-nav::-webkit-scrollbar {
+    display: none;
+  }
+  .navbar-nav li {
+    flex-shrink: 0;
+  }
+  
+  /* Grids */
+  .stats-grid,
+  .grid-2 {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  /* Tables */
+  .neon-table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+  }
+  
+  /* Form groups */
+  .form-group {
+    margin-bottom: 1rem;
+  }
+  
+  /* Kanban */
+  .kanban-board {
+    overflow-x: auto;
+    padding-bottom: 10px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .kanban-col {
+    min-width: 260px;
+    flex-shrink: 0;
+  }
+  
+  /* Task List */
+  .task-card-header,
+  .task-meta-row,
+  .task-actions {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  /* Chat box */
+  .chat-box {
+    max-height: 350px;
+  }
+  
+  /* Badges & Buttons */
+  .btn {
+    padding: 0.4rem 0.9rem;
+    font-size: 0.85rem;
+  }
+  .btn-lg {
+    padding: 0.6rem 1.5rem;
+    font-size: 0.95rem;
+  }
+}

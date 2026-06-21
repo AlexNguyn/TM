@@ -113,7 +113,7 @@ app.get('/dashboard', async (req, res) => {
     const pendingTasks = await pool.query(
       `SELECT t.*, p.name AS project_name FROM tasks t
        JOIN projects p ON p.id=t.project_id
-       WHERE t.assigned_to=$1 AND t.status NOT IN ('approved') ORDER BY t.deadline ASC NULLS LAST LIMIT 5`,
+       WHERE $1 = ANY(t.assigned_to) AND t.status NOT IN ('approved') ORDER BY t.deadline ASC NULLS LAST LIMIT 5`,
       [userId]
     );
 
@@ -121,7 +121,7 @@ app.get('/dashboard', async (req, res) => {
     const deadlineWarnings = await pool.query(
       `SELECT t.*, p.name AS project_name, p.deadline_alert_days
        FROM tasks t JOIN projects p ON p.id=t.project_id
-       WHERE t.assigned_to=$1 AND t.status NOT IN ('approved','rejected')
+       WHERE $1 = ANY(t.assigned_to) AND t.status NOT IN ('approved','rejected')
        AND t.deadline IS NOT NULL
        AND t.deadline BETWEEN NOW() AND NOW() + (p.deadline_alert_days || ' days')::INTERVAL`,
       [userId]
